@@ -1,9 +1,9 @@
 import aws from 'aws-sdk'
-import { type ManagedUpload } from 'aws-sdk/clients/s3';
 import { createReadStream } from 'fs';
 
 class ObjectService {
     s3: aws.S3;
+
     constructor() {
         aws.config.update({
             region: 'eu-north-1',
@@ -14,6 +14,14 @@ class ObjectService {
         this.s3 = new aws.S3();
     }
 
+
+    /**
+     * Saves a locally stored file to an S3 Bucket
+     *
+     * @public
+     * @param {string} dir - directory where you want to store the file
+     * @param {string} path - local path to file
+     */
     public saveFile(dir: string, path: string) {
         const config = {
             Key: dir + path.substring(path.lastIndexOf('/') + 1),
@@ -21,12 +29,8 @@ class ObjectService {
             Bucket: process.env.AWS_BUCKET ?? ""
         }
 
-        this.s3.upload(config, (err: Error, data: ManagedUpload.SendData) => {
-            if (err) {
-                throw err
-            } else {
-                console.log('File uploaded successfully. File location:', data.Location);
-            }
+        this.s3.upload(config, (err: Error) => {
+            if (err) throw err;
         });
     }
 }
