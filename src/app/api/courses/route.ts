@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
 import { type Entry, Parse } from "unzipper";
 import s3 from "~/app/services/aws/s3";
+import { db } from "~/server/db";
 
 const createDirIfNotExistent = async (path: string) => {
     try {
@@ -21,13 +22,13 @@ const saveZipTemporarilyAndFetchPath = async (file: File) => {
 }
 
 // ! otherwise the stream is not awaited and we get fake positives
-const saveAndUploadFiles = (path: string, file: File) => new Promise<void>((resolve, reject) => {
+const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => new Promise<void>((resolve, reject) => {
 
     const verifiedFiles: Record<string, boolean> = {
         "imsmanifest.xml": false
     };
 
-    createReadStream(path)
+    createReadStream(localPath)
         .pipe(Parse())
         .on('entry', function (entry: Entry) {
             const fileName = entry.path;
@@ -46,7 +47,7 @@ const saveAndUploadFiles = (path: string, file: File) => new Promise<void>((reso
             const fullPath = `/tmp/extracted-${file.name.replace('.zip', '')}/${fileNameStrippedOfDir}`
 
             entry.pipe(createWriteStream(fullPath));
-            s3.saveFile(`${file.name.replace('.zip', '')}/`, fullPath)
+            s3.saveFile(s3Path, fullPath)
         }).on('error', function (err) {
             reject(err.message)
         }).on('end', function () {
@@ -59,6 +60,23 @@ const saveAndUploadFiles = (path: string, file: File) => new Promise<void>((reso
         })
 })
 
+const upsertCourse = async (name: string, s3Path: string) => {
+    return await db.course.upsert({
+        where: {
+            s3Path
+        }, update: {
+            name, 
+            s3Path
+        }, create: {
+            name,
+            s3Path
+        }
+    })
+}
+
+export async function GET() {
+    return NextResponse.json({courses: await db.course.findMany()})
+}
 
 export async function POST(request: Request) {
     const data = await request.formData()
@@ -76,11 +94,12 @@ export async function POST(request: Request) {
 
     await createDirIfNotExistent(`/tmp/extracted-${file.name}`.replace('.zip', ''));
 
-    await saveAndUploadFiles(path, file).catch((e: string) => {
+    const s3Path = `${file.name.replace('.zip', '')}/`;
+
+    await saveAndUploadFiles(path, s3Path, file).catch((e: string) => {
         return NextResponse.json({ message: `Something went wrong uploading the course`, error: e }, { status: 500 });
     })
 
-    // TODO: store course by name, path
-
+    await upsertCourse(file.name, s3Path);
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }

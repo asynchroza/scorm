@@ -9,18 +9,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from "src/components/ui/select"
+import type { GetCoursesResponseBody } from "../types"
+import type { Dispatch, SetStateAction } from "react";
 
 
-export async function CourseSelect({ courses = [] }: { courses?: string[] }) {
+export function CourseSelect({ coursesBody, setSelectedCourse }: { coursesBody: GetCoursesResponseBody, setSelectedCourse: Dispatch<SetStateAction<string | undefined>> }) {
+
     return (
-        <Select>
+        <Select onValueChange={(value) => { setSelectedCourse(value) }}>
             <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select a course" />
             </SelectTrigger>
             <SelectContent>
                 <SelectGroup>
                     <SelectLabel>Courses</SelectLabel>
-                    {courses.map(course => (<SelectItem key={course} value={course}>{course}</SelectItem>))}
+                    {coursesBody.courses.map(course => (<SelectItem key={course.id} value={course.s3Path}>{course.name}</SelectItem>))}
                 </SelectGroup>
             </SelectContent>
         </Select>

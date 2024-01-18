@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-    provider = "sqlite"
+    provider = "postgres"
     url      = env("DATABASE_URL")
 }
 
@@ -15,5 +15,5 @@ model Course {
     name      String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
-    s3Path    String
+    s3Path    String @unique
 }
