@@ -11,7 +11,6 @@ aws.config.update({
 const s3 = new aws.S3();
 
 export const saveFile = (dir: string, path: string) => {
-    throw new Error("SOMETHING");
     const config = {
         Key: dir + path.substring(path.lastIndexOf('/') + 1),
         Body: createReadStream(path),
@@ -20,7 +19,7 @@ export const saveFile = (dir: string, path: string) => {
 
     s3.upload(config, (err: Error, data: ManagedUpload.SendData) => {
         if (err) {
-            console.log(err);
+            throw err
         } else {
             console.log('File uploaded successfully. File location:', data.Location);
         }

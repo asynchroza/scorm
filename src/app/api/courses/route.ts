@@ -32,6 +32,10 @@ export async function POST(request: Request) {
 
     // ! otherwise the stream is not awaited and we get fake positives
     const upload = () => new Promise<void>((resolve, reject) => {
+        const verifiedFiles: Record<string, boolean> = {
+            "imsmanifest.xml": false
+        };
+
         createReadStream(path)
             .pipe(Parse())
             .on('entry', function (entry: Entry) {
@@ -42,6 +46,12 @@ export async function POST(request: Request) {
                 }
 
                 const fileNameStrippedOfDir = fileName.substring(fileName.lastIndexOf('/') + 1)
+
+                // check if file is present within the list of required files and flip its flag
+                if (Object.keys(verifiedFiles).includes(fileNameStrippedOfDir)) {
+                    verifiedFiles[fileNameStrippedOfDir] = true;
+                }
+
                 const fullPath = `/tmp/extracted-${file.name.replace('.zip', '')}/${fileNameStrippedOfDir}`
 
                 entry.pipe(createWriteStream(fullPath));
@@ -49,17 +59,22 @@ export async function POST(request: Request) {
             }).on('error', function (err) {
                 reject(err.message)
             }).on('end', function () {
+                // reject promise if any of the files is not verified
+                if (Object.values(verifiedFiles).includes(false)) {
+                    reject("Scorm package is missing required files");
+                }
+
                 resolve();
             })
     })
 
-    let errored;
+    let errorMessage: string | undefined;
 
-    await upload().catch(() => {
-        errored = true;
+    await upload().catch((e: string) => {
+        errorMessage = e;
     })
 
-    if (errored) return NextResponse.json({ message: `Something went wrong uploading the course` }, { status: 500 });
+    if (errorMessage) return NextResponse.json({ message: `Something went wrong uploading the course`, error: errorMessage }, { status: 500 });
 
     // TODO: store s3 directory corresponding to course in database
 
