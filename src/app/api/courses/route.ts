@@ -2,7 +2,7 @@ import { createReadStream, createWriteStream } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
 import { type Entry, Parse } from "unzipper";
-import { saveFile } from "~/app/services/aws/s3";
+import s3 from "~/app/services/aws/s3";
 
 const createDirIfNotExistent = async (path: string) => {
     try {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
                 const fullPath = `/tmp/extracted-${file.name.replace('.zip', '')}/${fileNameStrippedOfDir}`
 
                 entry.pipe(createWriteStream(fullPath));
-                saveFile(`${file.name.replace('.zip', '')}/`, fullPath)
+                s3.saveFile(`${file.name.replace('.zip', '')}/`, fullPath)
             }).on('error', function (err) {
                 reject(err.message)
             }).on('end', function () {
