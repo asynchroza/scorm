@@ -80,5 +80,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: `Something went wrong uploading the course`, error: e }, { status: 500 });
     })
 
+    // TODO: store course by name, path
+
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }
