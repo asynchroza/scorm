@@ -1,7 +1,10 @@
+import Script from "next/script";
 import CoursesContainer from "./components/CoursesContainer";
 import type { GetCoursesResponseBody } from "./types";
+import { ScormContainer } from "./components/ScormContainer";
 
 export default async function Display() {
+
     const response = await fetch('http://localhost:3000/api/courses', { cache: 'force-cache' });
 
     if (!response.ok) {
@@ -11,7 +14,11 @@ export default async function Display() {
     const body = await response.json() as GetCoursesResponseBody;
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-            <CoursesContainer courseBody={body} />
-        </div>)
+        <>
+            <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
+                <CoursesContainer courseBody={body} />
+                <ScormContainer/>
+            </div>
+        </>
+    )
 }

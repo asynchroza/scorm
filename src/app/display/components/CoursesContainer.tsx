@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { GetCoursesResponseBody } from "../types";
 import { CourseSelect } from "./SelectCourse";
+import { ScormContainer } from "./ScormContainer";
 
 export default function CoursesContainer({ courseBody: coursesBody }: { courseBody: GetCoursesResponseBody }) {
 
