@@ -2,13 +2,12 @@ import { createReadStream, createWriteStream } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
 import { type Entry, Parse } from "unzipper";
+import { saveFile } from "~/app/services/aws/s3";
 
 const createDirIfNotExistent = async (path: string) => {
     try {
-        await mkdir(path);
-    } catch (e) {
-        console.error(e);
-    }
+        await mkdir(path)
+    } catch { }
 }
 
 export async function POST(request: Request) {
@@ -29,27 +28,41 @@ export async function POST(request: Request) {
     const path = `/tmp/${file.name}`
     await writeFile(path, buffer);
 
+    await createDirIfNotExistent(`/tmp/extracted-${file.name}`.replace('.zip', ''));
 
-    createReadStream(path)
-        .pipe(Parse())
-        .on('entry', function (entry: Entry) {
-            const fileName = entry.path;
-            const type = entry.type; // 'Directory' or 'File'
+    // ! otherwise the stream is not awaited and we get fake positives
+    const upload = () => new Promise<void>((resolve, reject) => {
+        createReadStream(path)
+            .pipe(Parse())
+            .on('entry', function (entry: Entry) {
+                const fileName = entry.path;
 
-            if (fileName.endsWith('/')) {
-                return;
-            }
+                if (fileName.endsWith('/')) {
+                    return;
+                }
 
-            console.log('[FILE]', fileName, type);
+                const fileNameStrippedOfDir = fileName.substring(fileName.lastIndexOf('/') + 1)
+                const fullPath = `/tmp/extracted-${file.name.replace('.zip', '')}/${fileNameStrippedOfDir}`
 
-            // TODO: probably also needs the security check
-            const fileNameStrippedOfDir = fileName.substring(fileName.lastIndexOf('/') + 1)
+                entry.pipe(createWriteStream(fullPath));
+                saveFile(`${file.name.replace('.zip', '')}/`, fullPath)
+            }).on('error', function (err) {
+                reject(err.message)
+            }).on('end', function () {
+                resolve();
+            })
+    })
 
-            entry.pipe(createWriteStream(`/tmp/extracted-${file.name.replace('.zip', '')}/${fileNameStrippedOfDir}`));
-            // NOTE: To ignore use entry.autodrain() instead of entry.pipe()
-        });
+    let errored;
 
-    // TODO: delete directory upon failure
+    await upload().catch(() => {
+        errored = true;
+    })
+
+    if (errored) return NextResponse.json({ message: `Something went wrong uploading the course` }, { status: 500 });
+
+    // TODO: store s3 directory corresponding to course in database
+
 
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }

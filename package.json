@@ -22,6 +22,7 @@
     "@radix-ui/react-toast": "^1.1.5",
     "@t3-oss/env-nextjs": "^0.7.1",
     "@types/unzipper": "^0.10.9",
+    "aws-sdk": "^2.1538.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "next": "^14.0.4",
