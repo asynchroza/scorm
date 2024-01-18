@@ -1,7 +1,15 @@
-import { createReadStream } from "fs";
-import { writeFile } from "fs/promises";
+import { createReadStream, createWriteStream } from "fs";
+import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
-import { Extract } from 'unzipper';
+import { type Entry, Parse } from "unzipper";
+
+const createDirIfNotExistent = async (path: string) => {
+    try {
+        await mkdir(path);
+    } catch (e) {
+        console.error(e);
+    }
+}
 
 export async function POST(request: Request) {
     const data = await request.formData()
@@ -12,7 +20,6 @@ export async function POST(request: Request) {
     }
 
     if (!file.name.includes('.zip')) {
-        // TODO: think of a better way to validate contents
         return NextResponse.json({ error: "Provided file is not a zip archive" }, { status: 400 });
     }
 
@@ -22,18 +29,27 @@ export async function POST(request: Request) {
     const path = `/tmp/${file.name}`
     await writeFile(path, buffer);
 
-    const readStream = createReadStream(path);
-    const extractionPath = `/tmp/extracted-${file.name}`
 
-    readStream.pipe(Extract({ path: extractionPath }))
-        .on('error', (err) => {
-            return NextResponse.json({ error: err.message }, { status: 500 })
+    createReadStream(path)
+        .pipe(Parse())
+        .on('entry', function (entry: Entry) {
+            const fileName = entry.path;
+            const type = entry.type; // 'Directory' or 'File'
+
+            if (fileName.endsWith('/')) {
+                return;
+            }
+
+            console.log('[FILE]', fileName, type);
+
+            // TODO: probably also needs the security check
+            const fileNameStrippedOfDir = fileName.substring(fileName.lastIndexOf('/') + 1)
+
+            entry.pipe(createWriteStream(`/tmp/extracted-${file.name.replace('.zip', '')}/${fileNameStrippedOfDir}`));
+            // NOTE: To ignore use entry.autodrain() instead of entry.pipe()
         });
 
-    // TODO: verify file is of type zip
-    // TODO: unarchive and check contents
-    console.log(`open ${path} to see the uploaded file`)
-
+    // TODO: delete directory upon failure
 
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }
