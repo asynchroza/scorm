@@ -21,8 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <Toaster/>
-      <body className={`font-sans ${inter.variable}`}>{children}</body>
+      <body className={`font-sans ${inter.variable}`}><main>{children}</main>
+        <Toaster />
+      </body>
     </html>
   );
 }
