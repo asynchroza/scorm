@@ -93,16 +93,18 @@ const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File
         })
 })
 
-const upsertCourse = async (name: string, s3Path: string) => {
+const upsertCourse = async (name: string, s3Path: string, indexFilePath: string) => {
     return await db.course.upsert({
         where: {
             s3Path
         }, update: {
             name,
-            s3Path
+            s3Path,
+            indexFilePath
         }, create: {
             name,
-            s3Path
+            s3Path,
+            indexFilePath
         }
     })
 }
@@ -137,6 +139,6 @@ export async function POST(request: Request) {
 
     const parsedManifest = CourseParser.getIndexAndName(manifest);
 
-    await upsertCourse(parsedManifest.name, s3Path);
+    await upsertCourse(parsedManifest.name, s3Path, parsedManifest.indexFile!);
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }

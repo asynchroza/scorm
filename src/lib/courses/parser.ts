@@ -1,48 +1,50 @@
-import { error } from "console";
-import { convertXML } from "simple-xml-to-json";
+import { xml2json } from "xml-js";
+import { findNthOccurance } from "../utils";
 
-type ManifestOrganizations = {
-    organizations: {
-        title: string,
-        children: {
-            organization: {
-                children: {
-                    title: {
-                        content: string
-                    }
-                }[] & unknown[]
-            }
-        }[]
-    },
-}
+type Resources = {
+    name: 'resources',
+    elements: {
+        name: 'resource',
+        attributes: {
+            href: string
+        }
+    }[]
+}[]
 
-type ManifestResources = {
-    resources: {
-        children: {
-            resource: {
-                href: string
-            }
+type Organiztions = {
+    name: 'organization',
+    elements: {
+        type: 'element', name: 'title', elements: {
+            content: string
         }[]
-    }
-}
+    }[]
+}[]
 
 type ParsedCourseXML = {
-    manifest: {
-        children: ManifestOrganizations[] | ManifestResources[]
-    }
+    elements: {
+        elements: {
+            name: 'organizations' | 'resources',
+            elements:
+            Organiztions
+            & Resources
+        }[]
+    }[]
 }
 
 export default class CourseParser {
+
+    private static getHrefAttribute(xml: string) {
+        const attrRegex = /(?:<resource[^>]*\s+href="([^"]+)")[^>]*\s*\/?>\s*/g;
+        const hrefRegex = /href="([^"]*)"/
+
+        const attribute = xml.match(attrRegex)?.[0].match(hrefRegex)?.[0];
+        const strippedHref = attribute?.substring(attribute.indexOf("\"") + 1, findNthOccurance(attribute, 2, "\"")).replaceAll("\\", "")
+
+        return strippedHref;
+    }
     public static getIndexAndName(xml: string) {
-        console.log(xml)
-        const manifest = (convertXML(xml) as ParsedCourseXML).manifest.children;
-        console.log(manifest)
-        const organizations = manifest.find(x => Object.keys(x).includes("organizations")) as ManifestOrganizations
-        const resources = manifest.find(x => Object.keys(x).includes("resources")) as ManifestResources
+        const indexFile = this.getHrefAttribute(xml);
 
-        const name = organizations.organizations.children[0]!.organization.children[0]!.title.content;
-        const indexFile = resources.resources.children[0]!.resource.href;
-
-        return { indexFile, name };
+        return { indexFile, name: "something" };
     }
 }
