@@ -27,5 +27,4 @@ export function CourseSelect({ className = "", courses, setSelectedCourseS3Path 
                 </SelectContent>
             </Select>
     )
-
 }

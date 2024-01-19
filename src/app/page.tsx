@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SetUser } from "./components/SetUser";
 
 export default async function HomePage() {
   return (
@@ -7,7 +6,6 @@ export default async function HomePage() {
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
         <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
           <Link href='/create' className="hover:text-gray-300">Create</Link> or <Link href="/display" className="hover:text-gray-300">do</Link> <span className="text-[hsl(280,100%,70%)]">Scorm</span> quizzes
-          <SetUser/>
         </h1>
       </div>
     </div>
