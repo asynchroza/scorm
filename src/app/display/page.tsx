@@ -1,10 +1,9 @@
-import Script from "next/script";
 import CoursesContainer from "./components/CoursesContainer";
 import type { GetCoursesResponseBody } from "./types";
-import { ScormContainer } from "./components/ScormContainer";
 
 export default async function Display() {
 
+    // TODO: Fix this URL
     const response = await fetch('http://localhost:3000/api/courses', { cache: 'force-cache' });
 
     if (!response.ok) {
