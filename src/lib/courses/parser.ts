@@ -1,36 +1,6 @@
 import { xml2json } from "xml-js";
 import { findNthOccurance } from "../utils";
 
-type Resources = {
-    name: 'resources',
-    elements: {
-        name: 'resource',
-        attributes: {
-            href: string
-        }
-    }[]
-}[]
-
-type Organiztions = {
-    name: 'organization',
-    elements: {
-        type: 'element', name: 'title', elements: {
-            content: string
-        }[]
-    }[]
-}[]
-
-type ParsedCourseXML = {
-    elements: {
-        elements: {
-            name: 'organizations' | 'resources',
-            elements:
-            Organiztions
-            & Resources
-        }[]
-    }[]
-}
-
 export default class CourseParser {
 
     private static getHrefAttribute(xml: string) {
