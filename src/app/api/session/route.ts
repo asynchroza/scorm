@@ -29,13 +29,8 @@ async function commitSessionStatus(body: LMSCommitBody) {
             active: finishStatus,
             courseName: body.cmi.comments,
             User: {
-                connectOrCreate: {
-                    where: {
-                        id: body.cmi.core.student_id
-                    },
-                    create: {
-                        id: body.cmi.core.student_id,
-                    }
+                connect: {
+                    id: body.cmi.core.student_id
                 }
             }
         }

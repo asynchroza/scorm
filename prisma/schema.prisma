@@ -24,7 +24,7 @@ model Session {
 }
 
 model User {
-    id       String    @id
+    id       String    @id @unique
     sessions Session[]
 }
 
