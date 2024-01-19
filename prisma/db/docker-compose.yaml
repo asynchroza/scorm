@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:latest
-    container_name: autohr-api-db
+    container_name: scorm-api-db
     environment:
       POSTGRES_DB: development
       POSTGRES_USER: dev
