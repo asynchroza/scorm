@@ -24,7 +24,6 @@ export default class LMSManager {
     private initializeApiOnWindow() {
         window.API = new window.Scorm12API({
             lmsCommitUrl: "/api/session",
-            autocommit: 5,
             alwaysSendTotalTime: true,
             selfReportSessionTime: true,
         });
@@ -34,7 +33,12 @@ export default class LMSManager {
 
     private initializeLmsEventListeners() {
         if (this.onExit) {
-            window.API.on("LMSSetValue.cmi.core.exit", this.onExit);
+            const exit = () => {
+                this.onExit();
+                window.API.LMSTerminate();
+            }
+
+            window.API.on("LMSSetValue.cmi.core.exit", exit);
         }
 
         window.API.on("LMSSetValue.cmi.*", function () {
@@ -43,14 +47,14 @@ export default class LMSManager {
     }
 
     private initializeCoreVariables() {
-        window.API?.setCMIValue("cmi.comments", this.courseName)
-        window.API?.setCMIValue("cmi.core.student_id", this.userId)
+        window.API.cmi.core.comments = this.courseName;
+        window.API.cmi.core.student_id = this.userId;
     }
 
     public initialize() {
         this.initializeApiOnWindow();
         this.loadSession();
-        this.initializeCoreVariables();
         this.initializeLmsEventListeners();
+        this.initializeCoreVariables();
     }
 }

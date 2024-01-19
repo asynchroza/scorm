@@ -3,11 +3,21 @@ import { NextResponse } from "next/server";
 import { db } from "~/server/db";
 
 async function createUserIfNotExistent(userId: string) {
-    await db.user.create({
-        data: {
-            id: userId,
-        },
-    });
+    const user = await db.user.findUnique({
+        where: {
+            id: userId
+        }
+    })
+
+    if (!user) {
+        await db.user.create({
+            data: {
+                id: userId,
+            },
+        });
+    }
+
+    return user;
 }
 
 export async function GET(request: Request) {
@@ -15,9 +25,9 @@ export async function GET(request: Request) {
 
     if (!cookie) {
         const userId = Math.floor(Math.random() * 1000).toString()
-        await createUserIfNotExistent(userId);
         cookies().set('userId', userId)
     }
 
-    return NextResponse.json({})
+    const user = await createUserIfNotExistent(cookies().get('userId')!.value);
+    return NextResponse.json(user);
 }
