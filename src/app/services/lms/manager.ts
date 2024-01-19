@@ -15,21 +15,26 @@ export default class LMSManager {
             alwaysSendTotalTime: true,
             selfReportSessionTime: true,
         });
+
+        window.API.storeData(true);
     }
 
     private initializeLmsEventListeners() {
         window.API.on("LMSSetValue.cmi.core.lesson_status", function (_, value) {
             if (value === "success" || value === "failed") {
-                console.log("Commiting results...")
+                console.log("Commiting results...", value);
             }
         });
+
+        window.API.on("LMSSetValue.cmi.*", function () {
+            window.API?.storeData();
+        })
     }
 
     public initialize() {
         this.initializeApiOnWindow();
-
         window.API.cmi.core.student_id = this.userId;
 
-        this.initializeLmsEventListeners()
+        this.initializeLmsEventListeners();
     }
 }

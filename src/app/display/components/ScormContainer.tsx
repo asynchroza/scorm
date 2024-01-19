@@ -4,7 +4,7 @@ import type { Course } from "@prisma/client";
 import { useCallback } from "react";
 import type Scorm12API from "~/app/dts/Scorm12API";
 import { getClientSideCookie } from "~/lib/common-client-side-utils/cookies";
-import LMSManager from "../lms/manager";
+import LMSManager from "../../services/lms/manager";
 
 declare global {
     interface Window {
@@ -24,10 +24,6 @@ export function ScormContainer({ selectedCourse }: { selectedCourse?: Course }) 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const initializeWindow = useCallback(() => {
         require('scorm-again');
-
-        if (!userId) {
-            return;
-        }
 
         const lms = new LMSManager(userId);
         lms.initialize();
