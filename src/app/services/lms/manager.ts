@@ -52,6 +52,5 @@ export default class LMSManager {
         this.loadSession();
         this.initializeCoreVariables();
         this.initializeLmsEventListeners();
-        // TODO: handle unload/exit properly -> a new session is created binded to a user without an id
     }
 }
