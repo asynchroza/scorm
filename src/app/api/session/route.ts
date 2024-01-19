@@ -1,12 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import type { LMSCommitBody } from "./types";
 import { db } from "~/server/db";
-import { Session } from "@prisma/client";
-
-const lessStatusStates = ["passed", "failed"];
+import { LESSON_STATUS_FLAGS } from "./constants";
 
 function isCourseFinished(lessonStatus: string) {
-    return !lessStatusStates.includes(lessonStatus)
+    return !LESSON_STATUS_FLAGS.includes(lessonStatus)
 }
 
 async function commitSessionStatus(body: LMSCommitBody) {

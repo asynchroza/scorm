@@ -12,12 +12,10 @@ export default class LMSManager {
     }
 
     private loadSession() {
-        fetch(`/api/session?userId=${this.userId}&courseName=${this.courseName}`).then(session => {
-            session.json().then(
-                (json) => {
-                    window.API.loadFromJSON(json.cmi);
-                }
-            )
+        fetch(`/api/session?userId=${this.userId}&courseName=${this.courseName}`)
+        .then(body => body.json())
+        .then((session) => {
+            window.API.loadFromJSON(session.cmi);
         })
     }
 
@@ -33,12 +31,7 @@ export default class LMSManager {
 
     private initializeLmsEventListeners() {
         if (this.onExit) {
-            const exit = () => {
-                this.onExit();
-                window.API.LMSTerminate();
-            }
-
-            window.API.on("LMSSetValue.cmi.core.exit", exit);
+            window.API.on("LMSSetValue.cmi.core.exit", this.onExit);
         }
 
         window.API.on("LMSSetValue.cmi.*", function () {
@@ -47,14 +40,14 @@ export default class LMSManager {
     }
 
     private initializeCoreVariables() {
-        window.API.cmi.core.comments = this.courseName;
-        window.API.cmi.core.student_id = this.userId;
+        window.API?.setCMIValue("cmi.comments", this.courseName)
+        window.API?.setCMIValue("cmi.core.student_id", this.userId)
     }
 
     public initialize() {
-        this.initializeApiOnWindow();
         this.loadSession();
-        this.initializeLmsEventListeners();
+        this.initializeApiOnWindow();
         this.initializeCoreVariables();
+        this.initializeLmsEventListeners();
     }
 }

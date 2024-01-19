@@ -15,7 +15,12 @@ declare global {
 
 export function ScormContainer({ selectedCourse }: { selectedCourse?: Course }) {
     if (!selectedCourse) return;
-    const userId = getClientSideCookie("userId")!;  // check is done at layout level
+    const userId = getClientSideCookie("userId");
+
+    // TODO: these checks may be done at layout level
+    if (!userId) {
+        return;
+    }
 
     const launchPageURL = `${process.env.NEXT_PUBLIC_AWS_BUCKET_URL}/${selectedCourse.s3Path}${selectedCourse.indexFilePath}`
 

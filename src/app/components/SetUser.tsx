@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 
 export function SetUser() {
     useEffect(() => {
@@ -16,5 +16,5 @@ export function SetUser() {
         void fetchCookie();
     }, [])
 
-    return <></>
+    return <Fragment/>
 }
