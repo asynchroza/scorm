@@ -1,4 +1,3 @@
-import { xml2json } from "xml-js";
 import { findNthOccurance } from "../utils";
 
 export default class CourseParser {
@@ -16,7 +15,6 @@ export default class CourseParser {
     private static getTitle(xml: string) {
         const titleRegex = /<title>(.*?)<\/title>/;
 
-        // Extract the value between <title> tags
         const match = xml.match(titleRegex)?.[0];
         return match?.substring(match.indexOf('>') + 1, findNthOccurance(match, 2, '<'));
     }
