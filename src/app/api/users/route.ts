@@ -5,7 +5,7 @@ export async function GET(request: Request) {
     const cookie = request.headers.get('Cookie') as string | undefined;
 
     if (!cookie) {
-        cookies().set('userId', (Math.random() * 1000).toString())
+        cookies().set('userId', Math.floor(Math.random() * 1000).toString())
     }
 
     return NextResponse.json({})
