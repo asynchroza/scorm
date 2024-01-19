@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { LMSCommitBody } from "./types";
 import { db } from "~/server/db";
+import { Session } from "@prisma/client";
 
 const lessStatusStates = ["passed", "failed"];
 
@@ -41,9 +42,41 @@ async function commitSessionStatus(body: LMSCommitBody) {
     })
 }
 
+async function getSession(userId: string, courseName: string) {
+
+    return await db.session.findUnique({
+        where: {
+            userId_courseName: {
+                userId,
+                courseName,
+            },
+            active: true
+        },
+        select: {
+            json: true
+        }
+    })
+}
+
 export async function POST(request: Request) {
     const body = await request.json() as LMSCommitBody;
     await commitSessionStatus(body);
 
     return NextResponse.json({})
+}
+
+export async function GET(request: NextRequest) {
+    // !: UrlSearchParams bugs out when the url is passed directly into the constructor
+    const query = new URL(request.url).searchParams;
+    const userId = query.get('userId')
+    const courseName = query.get('courseName')
+
+    if (!userId || !courseName) return NextResponse.json({error: "Missing query params"}, {status: 400});
+    const session = await getSession(userId, courseName);
+
+    if (!session) {
+        return NextResponse.json({error: "Session wasn't found"}, {status: 404})
+    }
+
+    return NextResponse.json(JSON.parse(session.json));
 }

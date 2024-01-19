@@ -2,6 +2,7 @@
 // @ts-nocheck
 
 import { redirect } from "next/navigation";
+import { db } from "~/server/db";
 
 export default class LMSManager {
     userId: string;
@@ -12,6 +13,17 @@ export default class LMSManager {
         this.userId = userId;
         this.courseName = courseName;
         this.onExit = onExit;
+    }
+
+    private loadSession() {
+        fetch(`/api/session?userId=${this.userId}&courseName=${this.courseName}`).then(session => {
+            session.json().then(
+                (json) => {
+                    console.log(json);
+                    window.API.loadFromJSON(json);
+                }
+            )
+        })
     }
 
     private initializeApiOnWindow() {
@@ -41,6 +53,7 @@ export default class LMSManager {
     }
 
     public initialize() {
+        this.loadSession();
         this.initializeApiOnWindow();
         this.initializeCoreVariables();
         this.initializeLmsEventListeners();
