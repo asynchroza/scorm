@@ -13,16 +13,16 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Course } from "@prisma/client";
 
 // this easily could be made content type agnostic (define within lib)
-export function CourseSelect({ className = "", courses, setSelectedCourseS3Path }: { className?: string, courses: Course[], setSelectedCourseS3Path: Dispatch<SetStateAction<string>> }) {
+export function CourseSelect({ className = "", courses, setSelectedCourseId }: { className?: string, courses: Course[], setSelectedCourseId: Dispatch<SetStateAction<number | undefined>> }) {
     return (
-            <Select onValueChange={(value) => { setSelectedCourseS3Path(value) }}>
+            <Select onValueChange={(value) => { setSelectedCourseId(Number(value)) }}>
                 <SelectTrigger className={className}>
                     <SelectValue placeholder="Select a course" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectGroup>
                         <SelectLabel>Courses</SelectLabel>
-                        {courses.map(course => (<SelectItem key={course.id} value={course.s3Path}>{course.name}</SelectItem>))}
+                        {courses.map(course => (<SelectItem key={course.id} value={course.id.toString()}>{course.name}</SelectItem>))}
                     </SelectGroup>
                 </SelectContent>
             </Select>

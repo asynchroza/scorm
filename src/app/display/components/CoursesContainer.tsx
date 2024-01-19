@@ -10,13 +10,12 @@ import { useSearchParams } from "next/navigation";
 export default function CoursesContainer({ courses }: { courses: Course[] }) {
     const params = useSearchParams();
     const course = params.get('course');
-    console.log(course);
-    const [selectedCourseS3Path, setSelectedCourseS3Path] = useState<string>(course ?? "");
+    const [selectedCourseId, setSelectedCourseId] = useState<number | undefined>(Number(course));
 
     return (
         <Fragment>
-            <CourseSelect className="absolute top-[12px] w-[50vw]" courses={courses} setSelectedCourseS3Path={setSelectedCourseS3Path} />
-            <ScormContainer selectedCourse={courses.find(course => course.s3Path === selectedCourseS3Path)} />
+            <CourseSelect className="absolute top-[12px] w-[50vw]" courses={courses} setSelectedCourseId={setSelectedCourseId} />
+            <ScormContainer selectedCourse={courses.find(course => course.id === selectedCourseId)} />
         </Fragment>
     )
 }
