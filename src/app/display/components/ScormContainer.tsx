@@ -12,8 +12,6 @@ declare global {
 export function ScormContainer({selectedCourse}: {selectedCourse?: Course}) {
     if (!selectedCourse) return;
 
-    console.log(selectedCourse);
-
     if (typeof window !== "undefined") {
         require('scorm-again');
         // const settings = window.getSec

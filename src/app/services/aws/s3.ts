@@ -1,6 +1,7 @@
 import aws from 'aws-sdk'
 import { readFileSync } from 'fs';
 import { getContentHeader } from './utils';
+import { findNthOccurance } from '~/lib/utils';
 
 class ObjectService {
     s3: aws.S3;
@@ -25,7 +26,7 @@ class ObjectService {
      */
     public saveFile(dir: string, path: string) {
         const config = {
-            Key: dir + path.substring(path.lastIndexOf('/') + 1),
+            Key: dir + path.substring(findNthOccurance(path, 2, "/") + 1),
             Bucket: process.env.AWS_BUCKET ?? "",
             Body: readFileSync(path),
             ACL: 'public-read',

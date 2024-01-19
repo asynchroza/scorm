@@ -1,8 +1,10 @@
-import { createReadStream, createWriteStream } from "fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
+import { preconnect } from "react-dom";
 import { type Entry, Parse } from "unzipper";
 import s3 from "~/app/services/aws/s3";
+import { findNthOccurance } from "~/lib/utils";
 import { db } from "~/server/db";
 
 const createDirIfNotExistent = async (path: string) => {
@@ -21,6 +23,11 @@ const saveZipTemporarilyAndFetchPath = async (file: File) => {
     return path;
 }
 
+function pause(milliseconds) {
+    var dt = new Date();
+    while ((new Date()) - dt <= milliseconds) { /* Do nothing */ }
+}
+
 // ! otherwise the stream is not awaited and we get fake positives
 const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => new Promise<void>((resolve, reject) => {
 
@@ -32,8 +39,9 @@ const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => ne
         .pipe(Parse())
         .on('entry', function (entry: Entry) {
             const fileName = entry.path;
+            const fullPath = `/tmp/extracted-${file.name.replace('.zip', '')}/${fileName.substring(findNthOccurance(fileName, 3, "/"))}`
 
-            if (fileName.endsWith('/')) {
+            if (fullPath.endsWith('/')) {
                 return;
             }
 
@@ -44,16 +52,23 @@ const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => ne
                 verifiedFiles[fileNameStrippedOfDir] = true;
             }
 
-            const fullPath = `/tmp/extracted-${file.name.replace('.zip', '')}/${fileNameStrippedOfDir}`
+            const parentDirectory = fullPath.substring(0, fullPath.lastIndexOf('/'))
 
-            entry.pipe(createWriteStream(fullPath));
-            s3.saveFile(s3Path, fullPath)
+            if (!existsSync(parentDirectory)) {
+                mkdirSync(parentDirectory, {recursive: true})
+            }
+
+            entry.pipe(createWriteStream(fullPath)).on('finish', () => {
+                s3.saveFile(s3Path, fullPath)
+            }).on('error', (e) => {
+                throw e;
+            });
         }).on('error', function (err) {
-            reject(err.message)
+            reject(err)
         }).on('end', function () {
             // reject promise if any of the files is not verified
             if (Object.values(verifiedFiles).includes(false)) {
-                reject("Scorm package is missing required files");
+                reject(new Error("Scorm package is missing required files"));
             }
 
             resolve();
@@ -65,7 +80,7 @@ const upsertCourse = async (name: string, s3Path: string) => {
         where: {
             s3Path
         }, update: {
-            name, 
+            name,
             s3Path
         }, create: {
             name,
@@ -75,7 +90,7 @@ const upsertCourse = async (name: string, s3Path: string) => {
 }
 
 export async function GET() {
-    return NextResponse.json({courses: await db.course.findMany()})
+    return NextResponse.json({ courses: await db.course.findMany() })
 }
 
 export async function POST(request: Request) {
@@ -96,9 +111,12 @@ export async function POST(request: Request) {
 
     const s3Path = `${file.name.replace('.zip', '')}/`;
 
-    await saveAndUploadFiles(path, s3Path, file).catch((e: string) => {
-        return NextResponse.json({ message: `Something went wrong uploading the course`, error: e }, { status: 500 });
-    })
+    const error = await saveAndUploadFiles(path, s3Path, file).catch((e: Error) => e)
+
+    if (error) {
+        console.error(error);
+        return NextResponse.json({ message: `Something went wrong uploading the course`, error: error.message }, { status: 500 });
+    }
 
     await upsertCourse(file.name, s3Path);
     return NextResponse.json({ message: `Course was successfully uploaded` });
