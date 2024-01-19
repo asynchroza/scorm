@@ -21,7 +21,7 @@ export function ScormContainer({selectedCourse}: {selectedCourse?: Course}) {
         window.API = new window.Scorm12API({});
     }
 
-    const launchPage = `${process.env.NEXT_PUBLIC_AWS_BUCKET_URL}/${selectedCourse.s3Path}launchpage.html`
+    const launchPage = `${process.env.NEXT_PUBLIC_AWS_BUCKET_URL}/${selectedCourse.s3Path}shared/launchpage.html`
 
     return <div>
         <iframe src={launchPage}></iframe>

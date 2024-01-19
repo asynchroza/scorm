@@ -1,7 +1,6 @@
-import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync } from "fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
-import { preconnect } from "react-dom";
 import { type Entry, Parse } from "unzipper";
 import s3 from "~/app/services/aws/s3";
 import { findNthOccurance } from "~/lib/utils";
@@ -21,11 +20,6 @@ const saveZipTemporarilyAndFetchPath = async (file: File) => {
     await writeFile(path, buffer);
 
     return path;
-}
-
-function pause(milliseconds) {
-    var dt = new Date();
-    while ((new Date()) - dt <= milliseconds) { /* Do nothing */ }
 }
 
 // ! otherwise the stream is not awaited and we get fake positives
@@ -58,6 +52,9 @@ const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => ne
                 mkdirSync(parentDirectory, {recursive: true})
             }
 
+            // Pipes are behaving really strangely and should be handled with 
+            // their event listeners and be wrapped in promises
+            // to behave fully synchronously
             entry.pipe(createWriteStream(fullPath)).on('finish', () => {
                 s3.saveFile(s3Path, fullPath)
             }).on('error', (e) => {

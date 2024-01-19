@@ -25,8 +25,10 @@ class ObjectService {
      * @param {string} path - local path to file
      */
     public saveFile(dir: string, path: string) {
+        const keyPath = dir + path.substring(findNthOccurance(path, 3, "/") + 1)
+
         const config = {
-            Key: dir + path.substring(findNthOccurance(path, 2, "/") + 1),
+            Key: keyPath,
             Bucket: process.env.AWS_BUCKET ?? "",
             Body: readFileSync(path),
             ACL: 'public-read',
