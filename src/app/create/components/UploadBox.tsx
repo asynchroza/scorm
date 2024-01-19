@@ -23,9 +23,11 @@ async function handleUpload(file: File | undefined, toast: typeof ToastType) {
         const data = new FormData()
         data.set('file', file);
 
+        // do not cache -- otherwise we might get good response even though files are not actually updated
         const response = await fetch("/api/courses", {
             method: "POST",
             body: data,
+            cache: 'no-cache'
         });
 
         if (!response.ok) {
