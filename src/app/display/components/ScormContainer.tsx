@@ -25,7 +25,7 @@ export function ScormContainer({ selectedCourse }: { selectedCourse?: Course }) 
     const initializeWindow = useCallback(() => {
         require('scorm-again');
 
-        const lms = new LMSManager(userId);
+        const lms = new LMSManager(userId, selectedCourse.name);
         lms.initialize();
     }, [])
 
