@@ -19,8 +19,7 @@ export default class LMSManager {
         fetch(`/api/session?userId=${this.userId}&courseName=${this.courseName}`).then(session => {
             session.json().then(
                 (json) => {
-                    console.log(json);
-                    window.API.loadFromJSON(json);
+                    window.API.loadFromJSON(json.cmi);
                 }
             )
         })
@@ -53,8 +52,8 @@ export default class LMSManager {
     }
 
     public initialize() {
-        this.loadSession();
         this.initializeApiOnWindow();
+        this.loadSession();
         this.initializeCoreVariables();
         this.initializeLmsEventListeners();
     }
