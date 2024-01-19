@@ -2,7 +2,7 @@ import CoursesContainer from "./components/CoursesContainer";
 import type { GetCoursesResponseBody } from "./types";
 
 export default async function Display() {
-    const response = await fetch(`${process.env.BASE_DOMAIN}/api/courses`);
+    const response = await fetch(`${process.env.BASE_DOMAIN}/api/courses`, { cache: 'no-cache'});
 
     if (!response.ok) {
         return <p>Something went wrong</p>
