@@ -24,6 +24,6 @@ export function ScormContainer({selectedCourse}: {selectedCourse?: Course}) {
     const launchPage = `${process.env.NEXT_PUBLIC_AWS_BUCKET_URL}/${selectedCourse.s3Path}shared/launchpage.html`
 
     return <div>
-        <iframe src={launchPage}></iframe>
+        <iframe src={launchPage} className="w-[80vw] h-[80vh] bg-white"/>
     </div>
 }
