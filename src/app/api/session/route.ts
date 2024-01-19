@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { LMSCommitBody } from "./types";
 import { db } from "~/server/db";
 
-const lessStatusStates = ["success", "failed"];
+const lessStatusStates = ["passed", "failed"];
 
 function isCourseFinished(lessonStatus: string) {
     return !lessStatusStates.includes(lessonStatus)
