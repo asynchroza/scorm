@@ -1,8 +1,9 @@
-import { createReadStream, createWriteStream, existsSync, mkdirSync } from "fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
 import { type Entry, Parse } from "unzipper";
 import s3 from "~/app/services/aws/s3";
+import CourseParser from "~/lib/courses/parser";
 import { findNthOccurance } from "~/lib/utils";
 import { db } from "~/server/db";
 
@@ -22,12 +23,26 @@ const saveZipTemporarilyAndFetchPath = async (file: File) => {
     return path;
 }
 
-// ! otherwise the stream is not awaited and we get fake positives
-const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => new Promise<void>((resolve, reject) => {
+/**
+ * Reads and extracts files from a ZIP archive, saves them to a specified S3 path, 
+ * and fetches the content of the 'imsmanifest.xml' file.
+ *
+ * @param {string} localPath - The local path to the ZIP file.
+ * @param {string} s3Path - The parent S3 path where the files will be saved.
+ * @param {File} file - The File object representing the ZIP file.
+ * @returns {Promise<string>} A Promise that resolves with the content of the 'imsmanifest.xml' file.
+ * @throws {Error} If the SCORM package is missing required files.
+ * 
+ * The handling with promises is required to avoid unexpected behaviour from stream piping.
+ * Otherwise there's a chance we get fake positive responses.
+ */
+const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File) => new Promise<string>((resolve, reject) => {
 
     const verifiedFiles: Record<string, boolean> = {
         "imsmanifest.xml": false
     };
+
+    let loadManifest = "";
 
     createReadStream(localPath)
         .pipe(Parse())
@@ -44,12 +59,13 @@ const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => ne
             // check if file is present within the list of required files and flip its flag
             if (Object.keys(verifiedFiles).includes(fileNameStrippedOfDir)) {
                 verifiedFiles[fileNameStrippedOfDir] = true;
+
             }
 
             const parentDirectory = fullPath.substring(0, fullPath.lastIndexOf('/'))
 
             if (!existsSync(parentDirectory)) {
-                mkdirSync(parentDirectory, {recursive: true})
+                mkdirSync(parentDirectory, { recursive: true })
             }
 
             // Pipes are behaving really strangely and should be handled with 
@@ -57,6 +73,11 @@ const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => ne
             // to behave fully synchronously
             entry.pipe(createWriteStream(fullPath)).on('finish', () => {
                 s3.saveFile(s3Path, fullPath)
+
+                if (fileNameStrippedOfDir.includes("imsmanifest.xml")) {
+                    loadManifest = readFileSync(fullPath).toString();
+                }
+
             }).on('error', (e) => {
                 throw e;
             });
@@ -68,7 +89,7 @@ const saveAndUploadFiles = (localPath: string, s3Path: string, file: File) => ne
                 reject(new Error("Scorm package is missing required files"));
             }
 
-            resolve();
+            resolve(loadManifest);
         })
 })
 
@@ -108,13 +129,14 @@ export async function POST(request: Request) {
 
     const s3Path = `${file.name.replace('.zip', '')}/`;
 
-    const error = await saveAndUploadFiles(path, s3Path, file).catch((e: Error) => e)
+    const manifest = await saveFilesAndFetchManifest(path, s3Path, file) as string | Error
 
-    if (error) {
-        console.error(error);
-        return NextResponse.json({ message: `Something went wrong uploading the course`, error: error.message }, { status: 500 });
+    if (manifest instanceof Error) {
+        return NextResponse.json({ message: `Something went wrong uploading the course`, error: manifest.message }, { status: 500 });
     }
 
-    await upsertCourse(file.name, s3Path);
+    const parsedManifest = CourseParser.getIndexAndName(manifest);
+
+    await upsertCourse(parsedManifest.name, s3Path);
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }
