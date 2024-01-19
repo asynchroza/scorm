@@ -33,6 +33,7 @@
     "scorm-again": "^1.7.1",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
+    "unzipper": "^0.10.14",
     "zod": "^3.22.4"
   },
   "devDependencies": {
