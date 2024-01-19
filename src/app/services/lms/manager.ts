@@ -1,12 +1,17 @@
 /* eslint-disable */
 // @ts-nocheck
 
+import { redirect } from "next/navigation";
+
 export default class LMSManager {
     userId: string;
     courseName: string;
-    constructor(userId: string, courseName: string) {
+    onExit: () => void;
+
+    constructor(userId: string, courseName: string, onExit: (() => void) = undefined) {
         this.userId = userId;
         this.courseName = courseName;
+        this.onExit = onExit;
     }
 
     private initializeApiOnWindow() {
@@ -21,11 +26,9 @@ export default class LMSManager {
     }
 
     private initializeLmsEventListeners() {
-        // window.API.on("LMSSetValue.cmi.core.lesson_status", function (_, value) {
-        //     if (value === "success" || value === "failed") {
-        //         console.log("Commiting results...", value);
-        //     }
-        // });
+        if (this.onExit) {
+            window.API.on("LMSSetValue.cmi.core.exit", this.onExit);
+        }
 
         window.API.on("LMSSetValue.cmi.*", function () {
             window.API?.storeData();

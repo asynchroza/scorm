@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import type Scorm12API from "~/app/dts/Scorm12API";
 import { getClientSideCookie } from "~/lib/common-client-side-utils/cookies";
 import LMSManager from "../../services/lms/manager";
+import { useRouter } from "next/navigation";
 
 declare global {
     interface Window {
@@ -17,7 +18,10 @@ export function ScormContainer({ selectedCourse }: { selectedCourse?: Course }) 
     if (!selectedCourse) return;
     const userId = getClientSideCookie("userId");
 
-    if (!userId) return <h1>User is not authenticated!</h1>
+    // TODO: these checks may be done at layout level
+    if (!userId) {
+        return;
+    }
 
     const launchPageURL = `${process.env.NEXT_PUBLIC_AWS_BUCKET_URL}/${selectedCourse.s3Path}${selectedCourse.indexFilePath}`
 
@@ -25,7 +29,7 @@ export function ScormContainer({ selectedCourse }: { selectedCourse?: Course }) 
     const initializeWindow = useCallback(() => {
         require('scorm-again');
 
-        const lms = new LMSManager(userId, selectedCourse.name);
+        const lms = new LMSManager(userId, selectedCourse.name, () => { window.location.href = "/" });
         lms.initialize();
     }, [])
 
