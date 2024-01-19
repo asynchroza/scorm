@@ -6,6 +6,7 @@ import s3 from "~/app/services/aws/s3";
 import CourseParser from "~/lib/courses/parser";
 import { findNthOccurance } from "~/lib/utils";
 import { db } from "~/server/db";
+import { REQUIRED_FILES } from "./constants";
 
 const createDirIfNotExistent = async (path: string) => {
     try {
@@ -30,19 +31,20 @@ const saveZipTemporarilyAndFetchPath = async (file: File) => {
  * @param {string} localPath - The local path to the ZIP file.
  * @param {string} s3Path - The parent S3 path where the files will be saved.
  * @param {File} file - The File object representing the ZIP file.
- * @returns {Promise<string>} A Promise that resolves with the content of the 'imsmanifest.xml' file.
+ * @returns {Promise} an object storing the xml manifest and a list of anon functions to push files to S3
  * @throws {Error} If the SCORM package is missing required files.
  * 
  * The handling with promises is required to avoid unexpected behaviour from stream piping.
  * Otherwise there's a chance we get fake positive responses.
  */
-const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File) => new Promise<string>((resolve, reject) => {
+const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File) => new Promise<{loadedManifest: string, filesToBePushedToS3: (() => void)[]}>((resolve, reject) => {
 
     const verifiedFiles: Record<string, boolean> = {
-        "imsmanifest.xml": false
+        [REQUIRED_FILES.MANIFEST]: false
     };
 
-    let loadManifest = "";
+    let loadedManifest = "";
+    const filesToBePushedToS3: (() => void)[] = [];
 
     createReadStream(localPath)
         .pipe(Parse())
@@ -72,13 +74,14 @@ const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File
             // their event listeners and be wrapped in promises
             // to behave fully synchronously
             entry.pipe(createWriteStream(fullPath)).on('finish', () => {
-                s3.saveFile(s3Path, fullPath)
+                filesToBePushedToS3.push(() => { s3.saveFile(s3Path, fullPath) })
 
-                if (fileNameStrippedOfDir.includes("imsmanifest.xml")) {
-                    loadManifest = readFileSync(fullPath).toString();
+                if (fileNameStrippedOfDir.includes(REQUIRED_FILES.MANIFEST)) {
+                    loadedManifest = readFileSync(fullPath).toString();
                 }
 
             }).on('error', (e) => {
+                // escalate error to parent pipe
                 throw e;
             });
         }).on('error', function (err) {
@@ -89,7 +92,7 @@ const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File
                 reject(new Error("Scorm package is missing required files"));
             }
 
-            resolve(loadManifest);
+            resolve({loadedManifest, filesToBePushedToS3});
         })
 })
 
@@ -130,15 +133,21 @@ export async function POST(request: Request) {
     await createDirIfNotExistent(`/tmp/extracted-${file.name}`.replace('.zip', ''));
 
     const s3Path = `${file.name.replace('.zip', '')}/`;
+    const result = await saveFilesAndFetchManifest(path, s3Path, file)
 
-    const manifest = await saveFilesAndFetchManifest(path, s3Path, file) as string | Error
-
-    if (manifest instanceof Error) {
-        return NextResponse.json({ message: `Something went wrong uploading the course`, error: manifest.message }, { status: 500 });
+    if (result instanceof Error) {
+        return NextResponse.json({ message: `Something went wrong uploading the course`, error: result.message }, { status: 500 });
     }
 
-    const parsedManifest = CourseParser.getIndexAndName(manifest);
+    const parsedManifest = CourseParser.getIndexAndName(result.loadedManifest);
 
-    await upsertCourse(parsedManifest.name, s3Path, parsedManifest.indexFile!);
+    if (!parsedManifest.indexFile || !parsedManifest.name) {
+        return NextResponse.json({ error: `Manifest couldn't be parsed` });
+    }
+
+    // do not push file until all checks are cleared
+    result.filesToBePushedToS3.forEach(save => save())
+
+    await upsertCourse(parsedManifest.name, s3Path, parsedManifest.indexFile);
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }

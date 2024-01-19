@@ -2,9 +2,7 @@ import CoursesContainer from "./components/CoursesContainer";
 import type { GetCoursesResponseBody } from "./types";
 
 export default async function Display() {
-
-    // TODO: Fix this URL
-    const response = await fetch('http://localhost:3000/api/courses', { cache: 'force-cache' });
+    const response = await fetch(`${process.env.BASE_DOMAIN}/api/courses`);
 
     if (!response.ok) {
         return <p>Something went wrong</p>
