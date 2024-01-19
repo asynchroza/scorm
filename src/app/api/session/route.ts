@@ -2,7 +2,16 @@ import { NextResponse } from "next/server";
 import type { LMSCommitBody } from "./types";
 import { db } from "~/server/db";
 
+const lessStatusStates = ["success", "failed"];
+
+function isCourseFinished(lessonStatus: string) {
+    return !lessStatusStates.includes(lessonStatus)
+}
+
 async function commitSessionStatus(body: LMSCommitBody) {
+    const finishStatus = isCourseFinished(body.cmi.core.lesson_status);
+    const stringifiedBody = JSON.stringify(body);
+
     await db.session.upsert({
         where: {
             userId_courseName: {
@@ -11,12 +20,12 @@ async function commitSessionStatus(body: LMSCommitBody) {
             }
         },
         update: {
-            json: JSON.stringify(body),
-            active: !["success", "failed"].includes(body.cmi.core.lesson_status),
+            json: stringifiedBody,
+            active: finishStatus,
         },
         create: {
-            json: JSON.stringify(body),
-            active: !["success", "failed"].includes(body.cmi.core.lesson_status),
+            json: stringifiedBody,
+            active: finishStatus,
             courseName: body.cmi.comments,
             User: {
                 connectOrCreate: {
