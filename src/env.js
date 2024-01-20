@@ -28,7 +28,7 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    NEXT_PUBLIC_AWS_BUCKET_URL: z.string().url(),
+    NEXT_PUBLIC_AWS_BUCKET_NGINX_ENDPOINT: z.string().startsWith('/'),
   },
 
   /**
@@ -40,7 +40,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-    NEXT_PUBLIC_AWS_BUCKET_URL: process.env.NEXT_PUBLIC_AWS_BUCKET_URL,
+    NEXT_PUBLIC_AWS_BUCKET_NGINX_ENDPOINT: process.env.NEXT_PUBLIC_AWS_BUCKET_NGINX_ENDPOINT,
     BASE_DOMAIN: process.env.BASE_DOMAIN,
   },
   /**

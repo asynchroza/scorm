@@ -17,7 +17,7 @@ export function ScormContainer({ selectedCourse }: { selectedCourse?: Course }) 
     if (!selectedCourse) return;
     const userId = getClientSideCookie("userId");
 
-    const launchPageURL = `${process.env.NEXT_PUBLIC_AWS_BUCKET_URL}/${selectedCourse.s3Path}${selectedCourse.indexFilePath}`
+    const launchPageURL = `${process.env.NEXT_PUBLIC_AWS_BUCKET_NGINX_ENDPOINT}/${selectedCourse.s3Path}${selectedCourse.indexFilePath}`
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const initializeWindow = useCallback(() => {
