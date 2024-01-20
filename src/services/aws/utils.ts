@@ -14,11 +14,10 @@ export function getFileExtension(fileName: string) {
 
 export function getContentHeader (fileName: string) {
     const fileExtension = getFileExtension(fileName);
-    if (!fileExtension) return {};
 
-    if(Object.keys(CONTENT_TYPES).includes(fileExtension)){
-        return {ContentType: CONTENT_TYPES[fileExtension]}
+    if(!fileExtension || !Object.keys(CONTENT_TYPES).includes(fileExtension)){
+        return {};
     }
 
-    return {}
+    return {ContentType: CONTENT_TYPES[fileExtension]}
 }
