@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Icons } from "~/components/ui/icons";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { type toast as ToastType, useToast } from "~/components/ui/use-toast";
@@ -24,6 +25,7 @@ async function uploadCourse(file: File) {
 }
 
 async function handleUpload(file: File | undefined, toast: typeof ToastType) {
+
     if (!file) {
         toast({
             title: "Please, select a file using the input field!",
@@ -54,6 +56,7 @@ async function handleUpload(file: File | undefined, toast: typeof ToastType) {
 export function UploadBox() {
     const { toast } = useToast()
     const [file, setFile] = useState<File>();
+    const [isLoading, setIsLoading] = useState(false);
 
     return (
         <div className="grid w-full max-w-sm items-center gap-1.5">
@@ -69,10 +72,14 @@ export function UploadBox() {
             />
             <Button
                 onClick={async () => {
+                    setIsLoading(true);
                     await handleUpload(file, toast);
+                    setIsLoading(false);
                 }}
             >
-                Upload file
+                {isLoading ? (
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                ) : "Upload course"}
             </Button>
         </div>
     );
