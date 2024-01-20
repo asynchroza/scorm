@@ -74,7 +74,6 @@ export const processEntries = (file: File, localPath: string, s3Path: string, ve
 
                     if (loadedManifest === "") {
                         loadedManifest = loadManifest(fileNameStrippedOfDir, fullPath);
-                        console.log(loadedManifest)
                     }
 
                 })
