@@ -26,7 +26,7 @@ export default class LMSManager {
             selfReportSessionTime: true,
         });
 
-        window.API.storeData(true);
+        // window.API.storeData(true);
     }
 
     private initializeLmsEventListeners() {
