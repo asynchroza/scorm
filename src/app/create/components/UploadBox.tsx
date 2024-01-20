@@ -11,6 +11,18 @@ type APIResponse = {
     message?: string
 }
 
+async function uploadCourse(file: File) {
+    const data = new FormData()
+    data.set('file', file);
+
+    // do not cache -- otherwise we might get a good response even though files are not actually updated
+    return await fetch("/api/courses", {
+        method: "POST",
+        body: data,
+        cache: 'no-cache'
+    });
+}
+
 async function handleUpload(file: File | undefined, toast: typeof ToastType) {
     if (!file) {
         toast({
@@ -20,25 +32,18 @@ async function handleUpload(file: File | undefined, toast: typeof ToastType) {
     }
 
     try {
-        const data = new FormData()
-        data.set('file', file);
-
-        // do not cache -- otherwise we might get good response even though files are not actually updated
-        const response = await fetch("/api/courses", {
-            method: "POST",
-            body: data,
-            cache: 'no-cache'
-        });
+        const response = await uploadCourse(file);
 
         if (!response.ok) {
             toast({
                 title: `File upload failed: ${(await response.json() as APIResponse).error ?? "Unkown reason"}`
             })
-        } else {
-            toast({
-                title: "File uploaded successfully!",
-            });
+            return;
         }
+
+        toast({
+            title: "File uploaded successfully!",
+        });
     } catch (error) {
         toast({
             title: "File upload failed. Please try again later.",
