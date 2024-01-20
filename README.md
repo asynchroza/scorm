@@ -1,5 +1,7 @@
 # Scorm Player
 
+![Landing page](images/scorm_landing_page.png)
+
 ## How to run
 
 ### Prerequisites
