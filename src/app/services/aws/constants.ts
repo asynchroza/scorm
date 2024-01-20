@@ -1,5 +1,6 @@
 export const CONTENT_TYPES: Record<string, string> = {
     '.html': 'text/html',
+    '.htm': 'text/html',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',

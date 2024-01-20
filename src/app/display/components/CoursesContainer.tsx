@@ -4,14 +4,10 @@ import { Fragment, useState } from "react";
 import { CourseSelect } from "./SelectCourse";
 import { ScormContainer } from "./ScormContainer";
 import type { Course } from "@prisma/client";
-import { useSearchParams } from "next/navigation";
 
 
 export default function CoursesContainer({ courses }: { courses: Course[] }) {
-    const params = useSearchParams();
-    const course = params.get('course');
-    console.log(course);
-    const [selectedCourseS3Path, setSelectedCourseS3Path] = useState<string>(course ?? "");
+    const [selectedCourseS3Path, setSelectedCourseS3Path] = useState<string>();
 
     return (
         <Fragment>

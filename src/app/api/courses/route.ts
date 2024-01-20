@@ -37,7 +37,7 @@ const saveZipTemporarilyAndFetchPath = async (file: File) => {
  * The handling with promises is required to avoid unexpected behaviour from stream piping.
  * Otherwise there's a chance we get fake positive responses.
  */
-const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File) => new Promise<{loadedManifest: string, filesToBePushedToS3: (() => void)[]}>((resolve, reject) => {
+const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File) => new Promise<{ loadedManifest: string, filesToBePushedToS3: (() => void)[] }>((resolve, reject) => {
 
     const verifiedFiles: Record<string, boolean> = {
         [REQUIRED_FILES.MANIFEST]: false
@@ -92,7 +92,7 @@ const saveFilesAndFetchManifest = (localPath: string, s3Path: string, file: File
                 reject(new Error("Scorm package is missing required files"));
             }
 
-            resolve({loadedManifest, filesToBePushedToS3});
+            resolve({ loadedManifest, filesToBePushedToS3 });
         })
 })
 
@@ -133,16 +133,16 @@ export async function POST(request: Request) {
     await createDirIfNotExistent(`/tmp/extracted-${file.name}`.replace('.zip', ''));
 
     const s3Path = `${file.name.replace('.zip', '')}/`;
-    const result = await saveFilesAndFetchManifest(path, s3Path, file)
-
-    if (result instanceof Error) {
-        return NextResponse.json({ message: `Something went wrong uploading the course`, error: result.message }, { status: 500 });
+    let result;
+    try {
+        result = await saveFilesAndFetchManifest(path, s3Path, file)
+    } catch (e) {
+        return NextResponse.json({ message: `Something went wrong uploading the course`, error: e instanceof Error ? e.message : e }, { status: 500 });
     }
 
     const parsedManifest = CourseParser.getIndexAndName(result.loadedManifest);
-
     if (!parsedManifest.indexFile || !parsedManifest.name) {
-        return NextResponse.json({ error: `Manifest couldn't be parsed` });
+        return NextResponse.json({ error: `Manifest couldn't be parsed` }, {status: 500});
     }
 
     // do not push file until all checks are cleared

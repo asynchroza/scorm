@@ -45,6 +45,7 @@ export default class LMSManager {
     }
 
     public initialize() {
+        window.API = undefined;
         this.loadSession();
         this.initializeApiOnWindow();
         this.initializeCoreVariables();

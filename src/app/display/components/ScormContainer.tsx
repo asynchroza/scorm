@@ -17,20 +17,15 @@ export function ScormContainer({ selectedCourse }: { selectedCourse?: Course }) 
     if (!selectedCourse) return;
     const userId = getClientSideCookie("userId");
 
-    // TODO: these checks may be done at layout level
-    if (!userId) {
-        return;
-    }
-
     const launchPageURL = `${process.env.NEXT_PUBLIC_AWS_BUCKET_URL}/${selectedCourse.s3Path}${selectedCourse.indexFilePath}`
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const initializeWindow = useCallback(() => {
         require('scorm-again');
 
-        const lms = new LMSManager(userId, selectedCourse.name, () => { window.location.href = "/" });
+        const lms = new LMSManager(userId!, selectedCourse.name, () => { window.location.href = "/" });
         lms.initialize();
-    }, [])
+    }, [selectedCourse])
 
     if (typeof window !== "undefined") {
         initializeWindow();

@@ -17,3 +17,6 @@
 ### Reverse proxy
 
 In order to avoid cross origin issues when loading iframes, we have to proxy the requests.
+
+![Scorm package is missing required files](images/missing_required_files.png)
+![Manifest couldn't be parsed](images/manifest_couldnt_be_parsed.png)
