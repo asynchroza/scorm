@@ -2,11 +2,12 @@ import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSyn
 import { mkdir, writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
 import { type Entry, Parse } from "unzipper";
-import s3 from "~/app/services/aws/s3";
-import CourseParser from "~/lib/courses/parser";
+import s3 from "~/services/aws/s3";
+import CourseParser from "~/app/api/courses/parser";
 import { findNthOccurance } from "~/lib/utils";
 import { db } from "~/server/db";
 import { REQUIRED_FILES } from "./constants";
+import { XMLParser } from "~/services/parser/xml";
 
 const createDirIfNotExistent = async (path: string) => {
     try {
@@ -128,26 +129,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Provided file is not a zip archive" }, { status: 400 });
     }
 
-    const path = await saveZipTemporarilyAndFetchPath(file);
-
-    await createDirIfNotExistent(`/tmp/extracted-${file.name}`.replace('.zip', ''));
-
-    const s3Path = `${file.name.replace('.zip', '')}/`;
-    let result;
     try {
-        result = await saveFilesAndFetchManifest(path, s3Path, file)
+        const path = await saveZipTemporarilyAndFetchPath(file);
+
+        await createDirIfNotExistent(`/tmp/extracted-${file.name}`.replace('.zip', ''));
+
+        const s3Path = `${file.name.replace('.zip', '')}/`;
+        const result = await saveFilesAndFetchManifest(path, s3Path, file)
+
+        const parsedManifest = CourseParser.getIndexAndName(result.loadedManifest);
+        result.filesToBePushedToS3.forEach(save => save())
+
+        await upsertCourse(parsedManifest.name, s3Path, parsedManifest.indexFile);
     } catch (e) {
         return NextResponse.json({ message: `Something went wrong uploading the course`, error: e instanceof Error ? e.message : e }, { status: 500 });
     }
 
-    const parsedManifest = CourseParser.getIndexAndName(result.loadedManifest);
-    if (!parsedManifest.indexFile || !parsedManifest.name) {
-        return NextResponse.json({ error: `Manifest couldn't be parsed` }, {status: 500});
-    }
-
-    // do not push file until all checks are cleared
-    result.filesToBePushedToS3.forEach(save => save())
-
-    await upsertCourse(parsedManifest.name, s3Path, parsedManifest.indexFile);
     return NextResponse.json({ message: `Course was successfully uploaded` });
 }
